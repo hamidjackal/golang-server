@@ -11,17 +11,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserService struct {
-	db *gorm.DB
-}
-
-func (u UserService) New() UserService {
-	return UserService{
+func InitUserService() *UserService {
+	return &UserService{
 		db: dbManager.GetDb(),
 	}
 }
 
-func (u UserService) list(c *fiber.Ctx) error {
+type UserService struct {
+	db *gorm.DB
+}
+
+func (u *UserService) list(c *fiber.Ctx) error {
 
 	var users []User
 
@@ -37,7 +37,7 @@ func (u UserService) list(c *fiber.Ctx) error {
 
 }
 
-func (u UserService) signin(credentials *SignIn) (SignedInUser, error) {
+func (u *UserService) signin(credentials *SignIn) (SignedInUser, error) {
 	var signedInUser SignedInUser
 	user, err := u.userByEmail(credentials.Email)
 	if err != nil {
@@ -57,7 +57,7 @@ func (u UserService) signin(credentials *SignIn) (SignedInUser, error) {
 	return signedInUser, nil
 }
 
-func (u UserService) generateToken(userId uint) string {
+func (u *UserService) generateToken(userId uint) string {
 	// Create the Claims
 	claims := jwt.MapClaims{
 		"id":  userId,
@@ -75,7 +75,7 @@ func (u UserService) generateToken(userId uint) string {
 	return t
 }
 
-func (u UserService) userById(id string) User {
+func (u *UserService) userById(id string) User {
 	var user User
 
 	result := u.db.First(&user, id)
@@ -87,7 +87,7 @@ func (u UserService) userById(id string) User {
 	return user
 }
 
-func (u UserService) userByEmail(email string) (User, error) {
+func (u *UserService) userByEmail(email string) (User, error) {
 	var user User
 
 	result := u.db.Where("email = ?", email).First(&user)
@@ -99,7 +99,7 @@ func (u UserService) userByEmail(email string) (User, error) {
 	return user, nil
 }
 
-func (u UserService) create(p *SignUp) (User, error) {
+func (u *UserService) create(p *SignUp) (User, error) {
 	user := User{
 		FirstName: p.FirstName,
 		LastName:  p.LastName,
@@ -116,7 +116,7 @@ func (u UserService) create(p *SignUp) (User, error) {
 	return user, nil
 }
 
-func (u UserService) delete(id string) error {
+func (u *UserService) delete(id string) error {
 	result := u.db.Delete(&User{}, id)
 	if result.Error != nil {
 		return errors.New("Invalid id")
@@ -124,11 +124,22 @@ func (u UserService) delete(id string) error {
 	return nil
 }
 
-func (u UserService) getOne(id string) (User, error) {
+func (u *UserService) getOne(id string) (User, error) {
 	var user User
 	result := u.db.First(&user, id)
 	if result.Error != nil {
 		return user, errors.New("Invalid id")
 	}
+	return user, nil
+}
+
+func (u *UserService) updateById(id string, body *UpdateUser) (User, error) {
+	var user User
+
+	result := u.db.First(&user).Updates(body)
+	if result.Error != nil {
+		return user, result.Error
+	}
+
 	return user, nil
 }

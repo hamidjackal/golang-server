@@ -1,6 +1,6 @@
 SHELL         := /bin/bash
 .DEFAULT_GOAL := help
-APP_NAME      := rusty-server
+APP_NAME      := golang-server
 ENV           := dev
 
 run/watch: ## Runs the server in watch mode

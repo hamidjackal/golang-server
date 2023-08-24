@@ -6,24 +6,25 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+func InitUserController() *UserController {
+	return &UserController{
+		userService: InitUserService(),
+		successResp: core.SuccessResponse[User]{},
+		errorResp:   core.ErrorResponse{},
+	}
+}
+
 type UserController struct {
-	userService UserService
+	userService *UserService
 	successResp core.SuccessResponse[User]
 	errorResp   core.ErrorResponse
 }
 
-func (u UserController) New() UserController {
-	return UserController{
-		userService: UserService{}.New(),
-		successResp: core.SuccessResponse[User]{},
-	}
-}
-
-func (u UserController) list(c *fiber.Ctx) error {
+func (u *UserController) list(c *fiber.Ctx) error {
 	return u.userService.list(c)
 }
 
-func (u UserController) create(c *fiber.Ctx) error {
+func (u *UserController) create(c *fiber.Ctx) error {
 	p := new(SignUp)
 	err := c.BodyParser(p)
 
@@ -45,7 +46,7 @@ func (u UserController) create(c *fiber.Ctx) error {
 	return resp.Create(user)
 }
 
-func (u UserController) delete(c *fiber.Ctx) error {
+func (u *UserController) delete(c *fiber.Ctx) error {
 	id := c.Params("id")
 	err := u.userService.delete(id)
 	if err != nil {
@@ -57,7 +58,7 @@ func (u UserController) delete(c *fiber.Ctx) error {
 	return resp.Default("Deleted")
 }
 
-func (u UserController) signin(c *fiber.Ctx) error {
+func (u *UserController) signin(c *fiber.Ctx) error {
 	p := new(SignIn)
 	err := c.BodyParser(p)
 
@@ -79,7 +80,7 @@ func (u UserController) signin(c *fiber.Ctx) error {
 	})
 }
 
-func (u UserController) signup(c *fiber.Ctx) error {
+func (u *UserController) signup(c *fiber.Ctx) error {
 	p := new(SignUp)
 	err := c.BodyParser(p)
 
@@ -101,7 +102,7 @@ func (u UserController) signup(c *fiber.Ctx) error {
 	return resp.Create(user)
 }
 
-func (u UserController) getOne(c *fiber.Ctx) error {
+func (u *UserController) getOne(c *fiber.Ctx) error {
 	id := c.Params("id")
 	user, err := u.userService.getOne(id)
 	if err != nil {
@@ -111,4 +112,24 @@ func (u UserController) getOne(c *fiber.Ctx) error {
 
 	resp := u.successResp.New(c)
 	return resp.Default(user)
+}
+
+func (u *UserController) patch(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	body := new(UpdateUser)
+	err := c.BodyParser(body)
+	if err != nil {
+		resp := u.errorResp.New(c)
+		return resp.InternalServerError()
+	}
+
+	user, err := u.userService.updateById(id, body)
+	if err != nil {
+		println("Update Error: ", err)
+	}
+
+	resp := u.successResp.New(c)
+	return resp.Default(user)
+
 }
